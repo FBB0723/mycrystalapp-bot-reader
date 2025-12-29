@@ -7,7 +7,7 @@ import datetime
 # ==========================================
 # 設定頁面資訊
 # ==========================================
-st.set_page_config(page_title="水晶靈感抽籤", page_icon="💎")
+st.set_page_config(page_title="幸運抽籤", page_icon="💎")
 
 # 自訂 CSS 讓介面更有質感
 st.markdown("""
@@ -41,7 +41,7 @@ def init_connection():
 def get_data():
     client = init_connection()
     # 這裡填入您的試算表名稱，或者用 URL
-    sheet = client.open("Crystal_DB").sheet1 
+    sheet = client.open("https://docs.google.com/spreadsheets/d/1-C-j0p2jfB63ty6hnYi9A6vXsQdC-CanRi3lLrVSuNA/edit?usp=drivesdk").sheet1 
     return sheet
 
 # ==========================================
@@ -76,7 +76,7 @@ def get_daily_focus():
 # ==========================================
 # APP 介面
 # ==========================================
-st.title("💎 今日水晶靈感")
+st.title("💎 今天的夥伴")
 st.caption("連結 Google Sheets 資料庫 V6.0")
 
 # 1. 讀取資料
