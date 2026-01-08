@@ -27,16 +27,44 @@ st.markdown("""
         background-color: #d4edda;
         color: #155724;
     }
-    /* 讓小標題更有質感 */
     h3 {
         color: #2c3e50;
-        font-size: 1.2rem;
+        font-size: 1.3rem;
+        margin-bottom: 0px;
+    }
+    .role-tag {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .palette-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        margin-top: 5px;
+        color: white;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 1. 完整水晶資料庫 (The Master Brain)
+# 1. 視覺色盤定義 (The Visual System)
+# ==========================================
+PALETTE_MAP = {
+    "A": {"name": "莫蘭迪色系", "color": "#a89f91", "desc": "溫柔・灰調・歲月靜好"},
+    "B": {"name": "冰川海洋系", "color": "#89c2d9", "desc": "透亮・淨化・百搭首選"},
+    "C": {"name": "大地森林系", "color": "#5e503f", "desc": "深邃・自然・穩重能量"},
+    "D": {"name": "暗夜星空系", "color": "#22333b", "desc": "神秘・強烈・個性防護"},
+    "E": {"name": "璀璨富貴系", "color": "#e09f3e", "desc": "閃耀・吸睛・強大氣場"},
+    "None": {"name": "未分類", "color": "#adb5bd", "desc": "自由搭配"}
+}
+
+# ==========================================
+
+# ==========================================
+# 2. 完整水晶資料庫 (The Master Brain)
 # ==========================================
 CRYSTAL_DB = {
     # --- 1. 水晶家族 (Quartz Family) ---
@@ -240,112 +268,130 @@ USER_PROFILE = {
 }
 
 # ==========================================
-# 2. 核心邏輯函式 (模糊搜尋與能量對應)
+# 3. 智慧核心函式
 # ==========================================
 def get_crystal_info(crystal_name):
-    """
-    智慧搜尋功能：
-    輸入 '綠幽靈' -> 自動對應 '幽靈水晶'
-    輸入 '黑檀' -> 自動對應 '檀木'
-    """
-    if not isinstance(crystal_name, str):
-        return {"color": "all", "zodiac": ["全星座"], "keywords": ["神祕能量"]}
-
-    # 1. 直接對應
-    if crystal_name in CRYSTAL_DB:
-        return CRYSTAL_DB[crystal_name]
-    
-    # 2. 關鍵字模糊對應 (最核心的邏輯)
+    # 模糊搜尋邏輯 (沿用 V9.0)
+    if not isinstance(crystal_name, str): return {}
+    if crystal_name in CRYSTAL_DB: return CRYSTAL_DB[crystal_name]
     for key in CRYSTAL_DB:
-        # 如果 資料庫Key 包含在名稱裡 (例如 '幽靈水晶' 在 '綠幽靈手串' 裡) -> 好像怪怪的，反過來
-        # 應該是：如果 名稱 包含 資料庫Key (例如 '綠幽靈' 包含 '幽靈') 
-        # 或者 資料庫Key 的關鍵字 包含 名稱
-        
-        # 簡單暴力法：只要資料庫的Key出現在你的名稱裡 (例如 '紫水晶' 在 '烏拉圭紫水晶' 裡)
-        if key in crystal_name:
-            return CRYSTAL_DB[key]
-        
-        # 檢查關鍵字 (例如 '馬粉' 在 keywords 裡)
-        keywords = CRYSTAL_DB[key].get("keywords", [])
-        for k in keywords:
-            if k in crystal_name:
-                return CRYSTAL_DB[key]
-
-    return {"color": "all", "zodiac": ["全星座"], "keywords": ["獨特能量", "守護"]}
+        if key in crystal_name: return CRYSTAL_DB[key]
+        for k in CRYSTAL_DB[key].get("keywords", []):
+            if k in crystal_name: return CRYSTAL_DB[key]
+    return {"keywords": ["獨特能量"]}
 
 def get_daily_focus():
     weekday = datetime.datetime.today().weekday()
+    # 這裡稍微簡化，專注於視覺，但保留星象提示
     focus_map = {
-        0: ("月亮 (雙子)", USER_PROFILE["moon"], ["blue", "white", "all"]),
-        1: ("火星 (天秤)", USER_PROFILE["mars"], ["red", "pink", "brown"]),
-        2: ("水星 (巨蟹)", USER_PROFILE["mercury"], ["blue", "gray"]),
-        3: ("木星 (幸運日)", USER_PROFILE["sun"], ["yellow", "purple", "orange"]),
-        4: ("金星 (巨蟹)", USER_PROFILE["venus"], ["pink", "green", "white"]),
-        5: ("土星 (處女)", USER_PROFILE["rising"], ["black", "brown", "earth"]),
-        6: ("太陽 (巨蟹)", USER_PROFILE["sun"], ["gold", "white", "red"]),
+        0: "月亮日 (週一)", 1: "火星日 (週二)", 2: "水星日 (週三)",
+        3: "木星日 (週四)", 4: "金星日 (週五)", 5: "土星日 (週六)", 6: "太陽日 (週日)"
     }
-    return focus_map.get(weekday, ("宇宙", "全星座", ["all"]))
+    return focus_map.get(weekday, "宇宙能量日")
+
+def get_visual_partners(leader, pool, count):
+    """
+    V10.0 核心：視覺協調演算法
+    規則：
+    1. A(莫蘭迪) -> 配 A 或 B(冰川)
+    2. B(冰川) -> 百搭，可配任何色系
+    3. C(大地) -> 配 C 或 B，或 E(璀璨)做點綴
+    4. D(暗夜) -> 配 D 或 B，或 E(璀璨)做點綴
+    5. E(璀璨) -> 建議配 B(冰川) 或 D(暗夜) 壓制，避免太花
+    """
+    leader_p = str(leader.get('Palette', 'None')).strip().upper()
+    selected = []
+    
+    # 定義適合的夥伴色系
+    compatible_map = {
+        "A": ["A", "B"],      # 莫蘭迪配冰川
+        "B": ["A", "B", "C", "D", "E"], # 冰川百搭
+        "C": ["C", "B", "E"], # 大地配冰川或一點金
+        "D": ["D", "B", "E"], # 暗夜配冰川或一點金
+        "E": ["B", "D"],      # 璀璨配冰川或暗夜襯托
+        "None": ["A", "B", "C", "D", "E"]
+    }
+    
+    target_palettes = compatible_map.get(leader_p, ["B"])
+    
+    # 篩選候選池
+    candidates = [c for c in pool if str(c.get('Palette', 'None')).strip().upper() in target_palettes]
+    
+    # 如果候選不足，就開放全池 (避免報錯)
+    if len(candidates) < count:
+        candidates = pool
+        
+    if len(candidates) > 0:
+        partners = random.sample(candidates, min(len(candidates), count))
+        selected.extend(partners)
+        
+    return selected
 
 # ==========================================
 # 主程式
 # ==========================================
-st.title("💎 今天的夥伴")
+st.title("💎 今天的夥伴 (Visual Ver.)")
 
 try:
-    # 讀取 Google Sheet CSV
     df = pd.read_csv(sheet_url)
-    
-    # 資料處理
     df = df.astype(str)
     all_records = df.to_dict('records')
-    
-    # ⚠️ 修正：篩選 'status' 為 '服役中'
     active_pool = [d for d in all_records if d.get('status') == '服役中']
     
-    st.success(f"✅ 連線成功！目前「服役中」的水晶共有 {len(active_pool)} 條")
+    st.success(f"✅ 視覺庫存就緒！共 {len(active_pool)} 條服役中")
 
-    if st.button("🔮 開始今日抽抽", type="primary"):
-        # 1. 取得今日能量
-        focus_planet, focus_sign, lucky_colors = get_daily_focus()
+    if st.button("🎨 開啟視覺系抽籤", type="primary"):
+        daily_focus = get_daily_focus()
         
-        # 2. 隨機選 3 條
         if len(active_pool) > 0:
-            daily_count = random.choice([2, 3])
-            selected = random.sample(active_pool, min(len(active_pool), daily_count))
+            # 1. 先隨機選出一位「主角」
+            leader = random.choice(active_pool)
+            leader_palette = str(leader.get('Palette', 'None')).strip().upper()
+            
+            # 2. 根據主角，挑選 1-2 位「配角」
+            remaining_pool = [c for c in active_pool if c['id'] != leader['id']]
+            partners = get_visual_partners(leader, remaining_pool, random.choice([1, 2]))
+            
+            final_team = [leader] + partners
             
             # 3. 顯示結果
             st.divider()
-            st.subheader(f"🌟 今日焦點：{focus_planet}")
-            st.caption(f"幸運色：{', '.join(lucky_colors)}")
+            st.subheader(f"🌟 {daily_focus} | 風格：{PALETTE_MAP.get(leader_palette, {}).get('name', '混搭')}")
             
-            cols = st.columns(len(selected))
-            for idx, c in enumerate(selected):
+            cols = st.columns(len(final_team))
+            for idx, c in enumerate(final_team):
                 with cols[idx]:
-                    role = "👑 主角" if idx == 0 else "⚔️ 護法"
+                    role = "👑 主角" if idx == 0 else "✨ 配角"
+                    p_code = str(c.get('Palette', 'None')).strip().upper()
+                    p_info = PALETTE_MAP.get(p_code, PALETTE_MAP["None"])
                     
-                    # 使用智慧搜尋取得功效
-                    info = get_crystal_info(c['main_crystal'])
-                    keywords_str = '、'.join(info.get('keywords', []))
+                    # 顯示角色標籤
+                    st.markdown(f"<div class='role-tag'>{role}</div>", unsafe_allow_html=True)
                     
-                    st.info(f"{role}")
+                    # 顯示名稱
                     st.markdown(f"### {c['name']}")
-                    
-                    # ⚠️ 修正：只顯示樣式，隱藏 ID
                     st.text(f"{c['style']}")
                     
-                    # 顯示材質與功效
-                    st.caption(f"材質：{c['main_crystal']}")
-                    st.caption(f"能量：{keywords_str}")
-            
+                    # 顯示色系標籤 (有背景色)
+                    st.markdown(f"""
+                        <div class='palette-tag' style='background-color: {p_info['color']};'>
+                            {p_info['name']}
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # 顯示功效
+                    info = get_crystal_info(c['main_crystal'])
+                    st.caption(f"能量：{'、'.join(info.get('keywords', []))}")
+
             # 4. 籤詩
             st.divider()
             fortune = random.choice(HYAKUNIN_ISSHU)
             st.markdown(f"#### 📜 {fortune}")
+            
         else:
-            st.warning("⚠️ 庫存是空的，請檢查試算表的 status 欄位是否為「服役中」。")
+            st.warning("⚠️ 庫存是空的，請檢查 status。")
 
 except Exception as e:
-    st.error("讀取資料失敗，請確認：")
-    st.markdown("1. Google 試算表權限是否設為「知道連結者可檢視」？")
-    st.markdown("2. 網址結尾是否為 `/export?format=csv` ？")
-    st.code(f"錯誤代碼：{e}")
+    st.error("發生錯誤，請檢查：")
+    st.markdown("1. 是否已在 Google Sheet 新增 `Palette` 欄位？")
+    st.code(f"{e}")
